@@ -11,7 +11,14 @@ interface CollectionListProps {
 export default function CollectionList({ collections }: CollectionListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   
-  const filteredCollections = collections.filter(collection => 
+  // Filter to only include BottomPosition, TopPosition, and Takedowns
+  const allowedCollections = ['Bottom', 'Top', 'Takedowns'];
+  const filteredByType = collections.filter(collection => 
+    allowedCollections.includes(collection)
+  );
+  
+  // Then apply the search filter on the already filtered list
+  const filteredCollections = filteredByType.filter(collection => 
     collection.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
