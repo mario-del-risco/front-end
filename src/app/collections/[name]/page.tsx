@@ -3,6 +3,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import clientPromise from '@/lib/mongodb';
 import CollectionDetails from '@/components/CollectionDetails';
+import { serializeDocuments } from '@/lib/mongodb-helpers';
 
 interface Props {
   params: {
@@ -23,7 +24,10 @@ export default async function CollectionPage({ params }: Props) {
   
   try {
     // Get documents from the collection
-    const documents = await db.collection(params.name).find({}).limit(20).toArray();
+    const rawDocuments = await db.collection(params.name).find({}).limit(20).toArray();
+    
+    // Serialize documents to make them safe for client components
+    const documents = serializeDocuments(rawDocuments);
     
     // Get total count
     const totalCount = await db.collection(params.name).countDocuments();

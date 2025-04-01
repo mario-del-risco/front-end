@@ -2,14 +2,21 @@
 'use client';
 
 import { useState } from 'react';
-import { Document } from 'mongodb';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+interface DocumentType {
+  _id: string;
+  [key: string]: any;
+}
 
 interface CollectionDetailsProps {
-  documents: Document[];
+  documents: DocumentType[];
 }
 
 export default function CollectionDetails({ documents }: CollectionDetailsProps) {
   const [expandedDoc, setExpandedDoc] = useState<string | null>(null);
+  const pathname = usePathname();
   
   if (documents.length === 0) {
     return (
@@ -48,28 +55,47 @@ export default function CollectionDetails({ documents }: CollectionDetailsProps)
       
       <div className="space-y-4">
         {documents.map((doc) => {
-          const id = doc._id.toString();
+          const id = doc._id;
           const isExpanded = expandedDoc === id;
+          const documentName = doc.technique || doc.name || doc.position || 'Document';
           
           return (
             <div key={id} className="border dark:border-gray-700 rounded-lg overflow-hidden">
-              <div 
-                className="flex justify-between items-center p-4 cursor-pointer bg-gray-50 dark:bg-gray-700"
-                onClick={() => toggleDocument(id)}
-              >
-                <div className="font-medium">
-                  <span className="text-gray-800 dark:text-gray-200">ID: </span>
-                  <span className="text-gray-600 dark:text-gray-400">{id}</span>
-                </div>
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className={`h-5 w-5 text-gray-500 transition-transform ${isExpanded ? 'transform rotate-180' : ''}`} 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
+              <div className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700">
+                <div 
+                  className="flex-1 font-medium cursor-pointer"
+                  onClick={() => toggleDocument(id)}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                  <span className="text-gray-800 dark:text-gray-200">
+                    {documentName}
+                  </span>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    ID: {id}
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Link 
+                    href={`${pathname}/document/${id}`}
+                    className="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    View
+                  </Link>
+                  <button
+                    onClick={() => toggleDocument(id)}
+                    className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
+                  >
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      className={`h-5 w-5 text-gray-500 transition-transform ${isExpanded ? 'transform rotate-180' : ''}`}
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                </div>
               </div>
               
               {isExpanded && (
