@@ -1,6 +1,10 @@
 // src/components/TechniqueDetail.tsx
 'use client';
 
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+
 interface TechniqueProps {
   document: {
     _id: string;
@@ -13,13 +17,76 @@ interface TechniqueProps {
     related_techniques?: string[];
     [key: string]: any;
   };
+  collectionName: string;
 }
 
-export default function TechniqueDetail({ document }: TechniqueProps) {
+export default function TechniqueDetail({ document, collectionName }: TechniqueProps) {
   const title = document.technique || document.name || 'Unnamed Technique';
+  const { data: session } = useSession();
+  const router = useRouter();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const isAdmin = (session?.user as any)?.role === 'admin';
+
+  const handleEdit = () => {
+    router.push(`/collections/${collectionName}/document/${document._id}/edit`);
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/collections/${collectionName}/${document._id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to delete document');
+      }
+
+      // Navigate back to collection page
+      router.push(`/collections/${collectionName}`);
+      router.refresh();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
   
   return (
     <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+      {isAdmin && (
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={handleEdit}
+            className="mr-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Edit
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </button>
+        </div>
+      )}
+      
+      {error && (
+        <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded dark:bg-red-900 dark:text-red-300 dark:border-red-800">
+          {error}
+        </div>
+      )}
+      
       <h2 className="text-2xl font-bold mb-4">{title}</h2>
       
       {document.belt && (

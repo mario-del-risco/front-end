@@ -1,14 +1,14 @@
 // src/app/api/auth/[...nextauth]/route.ts
-import NextAuth from "next-auth/next";
+import NextAuth from "next-auth";
+import type { NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import { NextAuthOptions } from "next-auth";
 
-export const authOptions: NextAuthOptions = {
+export const authConfig: NextAuthConfig = {
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
     }),
     CredentialsProvider({
       name: "Credentials",
@@ -51,8 +51,8 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  trustHost: true,
 };
 
-const handler = NextAuth(authOptions);
+const handler = NextAuth(authConfig);
 export { handler as GET, handler as POST };

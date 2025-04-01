@@ -1,9 +1,12 @@
-// src/app/collections/[name]/document/[id]/page.tsx
+// src/app/collections/[name]/document/[id]/edit/page.tsx
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ObjectId } from 'mongodb';
+import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
+import { authConfig } from '@/app/api/auth/[...nextauth]/route';
 import clientPromise from '@/lib/mongodb';
-import TechniqueDetail from '@/components/TechniqueDetail';
+import DocumentEditForm from '@/components/DocumentEditForm';
 import { serializeDocument } from '@/lib/mongodb-helpers';
 import { notFound } from 'next/navigation';
 
@@ -15,36 +18,21 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const client = await clientPromise;
-  const db = client.db('Jiujitsu');
-  
-  try {
-    // Validate ObjectId
-    const objectId = new ObjectId(params.id);
-    const document = await db.collection(params.name).findOne({ _id: objectId });
-    
-    if (!document) {
-      return {
-        title: 'Document Not Found',
-        description: 'The requested document could not be found',
-      };
-    }
-    
-    const documentName = document.technique || document.name || 'Document';
-    
-    return {
-      title: `${documentName} | ${params.name} Collection`,
-      description: document.description || `Details of ${documentName} in the ${params.name} collection`,
-    };
-  } catch (error) {
-    return {
-      title: 'Error',
-      description: 'An error occurred while retrieving the document',
-    };
-  }
+  return {
+    title: `Edit Document | ${params.name} Collection`,
+    description: `Edit document in the ${params.name} collection`,
+  };
 }
 
-export default async function DocumentDetailPage({ params }: Props) {
+export default async function EditDocumentPage({ params }: Props) {
+  // Check authentication
+  const session = await getServerSession(authConfig);
+  
+  // If not authenticated or not admin, redirect to login
+  if (!session || (session.user as any)?.role !== 'admin') {
+    redirect('/login?callbackUrl=' + encodeURIComponent(`/collections/${params.name}/document/${params.id}/edit`));
+  }
+  
   const client = await clientPromise;
   const db = client.db('Jiujitsu');
   
@@ -70,26 +58,26 @@ export default async function DocumentDetailPage({ params }: Props) {
     return (
       <main className="container mx-auto px-4 py-8">
         <div className="mb-6">
-          <Link href={`/collections/${params.name}`} className="text-blue-600 hover:underline flex items-center">
+          <Link href={`/collections/${params.name}/document/${params.id}`} className="text-blue-600 hover:underline flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to {params.name} Collection
+            Back to Document
           </Link>
         </div>
         
-        <TechniqueDetail document={document} collectionName={params.name} />
+        <DocumentEditForm document={document} collectionName={params.name} />
       </main>
     );
   } catch (error) {
     return (
       <main className="container mx-auto px-4 py-8">
         <div className="mb-6">
-          <Link href={`/collections/${params.name}`} className="text-blue-600 hover:underline flex items-center">
+          <Link href={`/collections/${params.name}/document/${params.id}`} className="text-blue-600 hover:underline flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to {params.name} Collection
+            Back to Document
           </Link>
         </div>
         
